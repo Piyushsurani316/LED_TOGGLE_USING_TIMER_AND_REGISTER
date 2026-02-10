@@ -7,8 +7,8 @@ int main(void)
 {
 	clock_setup();
     TIM2_Init_ms(1000);
-while(1)
-{}
+    while(1){}
+
 }
  void TIM2_IRQHandler(void)
  {
@@ -21,20 +21,25 @@ while(1)
 
 
 void TIM2_Init_ms(uint16_t delay_ms)
-{
+   {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 
+
+    //TIM2-> CR1 &= ~(0x01);
+   // RCC->APB1RSTR |=  (RCC_APB1RSTR_TIM2RST);   /* Reset TIM4. */
+      // RCC->APB1RSTR &= ~(RCC_APB1RSTR_TIM2RST);
+    //RCC->APB1RSTR |= (0x01);
     TIM2->PSC = 7199;              // 0.1 ms tick
     TIM2->ARR = (delay_ms * 10) - 1;
-    TIM2->EGR |= TIM_EGR_UG;           // Load PSC + ARR
-    TIM2->CNT = 0;                     // RESET counter (IMPORTANT)
+   // TIM2->EGR |= TIM_EGR_UG;           // Load PSC + ARR
+    TIM2->SR &= ~TIM_SR_UIF;                  // RESET counter (IMPORTANT)
     TIM2->DIER |= TIM_DIER_UIE;
     NVIC_EnableIRQ(TIM2_IRQn);
     TIM2->CR1 |= TIM_CR1_CEN;
-}
+   }
 
 void clock_setup()
-{
+   {
 	//Clock Setting
 	    RCC->CR |= RCC_CR_HSEON; //bit 16 (High Speed External Clock ) ON of Clock Control Register
 	    while (!(RCC->CR & RCC_CR_HSERDY)); // wait till external oscillator stable
@@ -45,6 +50,7 @@ void clock_setup()
 
 	    // PLL Setup
 	    RCC->CFGR |= RCC_CFGR_PLLSRC;         // PLL source from external oscillator
+	    RCC->CFGR &= ~RCC_CFGR_PLLMULL; //required setting otherwise after restart some issue
 	    RCC->CFGR |= RCC_CFGR_PLLMULL9;       // PLL Multiply with 9 to get 72MHZ Clock
 
 	    // APB1 Setup
